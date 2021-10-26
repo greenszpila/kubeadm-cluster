@@ -1,9 +1,3 @@
-provider "aws" {
-  profile = "default"
-  region  = "us-east-2"
-}
-
-
 resource "aws_security_group" "remote-allow" {
   name        = "remote-allow-security-group"
   description = "Allow HTTP, HTTPS and SSH traffic"
@@ -53,15 +47,35 @@ resource "aws_security_group" "remote-allow" {
   }
 }
 
+data "aws_ami" "ubuntu" {
+  most_recent = true
 
-resource "aws_instance" "kubeadm" {
+  filter {
+    name   = "name"
+    #values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  owners = ["099720109477"] # Canonical
+}
+
+
+
+resource "aws_instance" "kubeadm-node" {
   count = 3
-  key_name = "kriss"
+  key_name = var.ami_key_pair_name
   tags = {
-    Name = "kubeadm${count.index}"
+    Name = "kubeadm-node${count.index}"
          }
-  ami           = "ami-0b9064170e32bde34" # ubuntu 18.04 in us-east-2
-  instance_type = "t2.medium"
+  ami           = data.aws_ami.ubuntu.id
+                  # "ami-0b9064170e32bde34" # ubuntu 18.04 in us-east-2
+                  # "ami-0943382e114f188e8" #        18.04 in eu-west-1
+  instance_type = var.ec2_instance_type
 
   
 
@@ -69,17 +83,18 @@ resource "aws_instance" "kubeadm" {
     connection {
       type     = "ssh"
       user     = "ubuntu"
-      private_key = "${file("~/coding/kriss.pem")}"
-      #host     = aws_instance.kubeadm[count.index].public_ip
-      #host     = "${aws_instance.kubeadm[count.index].public_ip}"
-      #host = element(aws_instance.kubeadm.*.public_ip, count.index)
-      #host     = "${element(aws_instance.kubeadm.*.public_ip, count.index)}"
+      private_key = "${file(var.private_key_location)}"
+      #private_key = "${file("~/coding/kriss.pem")}"
+      #host     = aws_instance.kubeadm-node[count.index].public_ip
+      #host     = "${aws_instance.kubeadm-node[count.index].public_ip}"
+      #host = element(aws_instance.kubeadm-node.*.public_ip, count.index)
+      #host     = "${element(aws_instance.kubeadm-node.*.public_ip, count.index)}"
       host = "${self.public_ip}"
-      #host = aws_instance.kubeadm.*.arn
+      #host = aws_instance.kubeadm-node.*.arn
 
 
 
-      #host     = aws_instance.kubeadm.public_ip
+      #host     = aws_instance.kubeadm-node.public_ip
       timeout     = "2m"
     }
     inline = [
@@ -94,6 +109,8 @@ resource "aws_instance" "kubeadm" {
     "sudo apt-get install -y docker-ce=5:19.03.12~3-0~ubuntu-bionic kubelet=1.19.4-00 kubeadm=1.19.4-00 kubectl=1.19.4-00",
     "sudo apt-mark hold docker-ce kubelet kubeadm kubectl",
     "echo \"net.bridge.bridge-nf-call-iptables=1\" | sudo tee -a /etc/sysctl.conf",
+    # modprobe br_netfilter optional to fix "sysctl: cannot stat /proc/sys/net/bridge/bridge-nf-call-iptables: No such file or directory"
+    # "sudo modprobe br_netfilter",
     "sudo sysctl -p",
 
 
@@ -116,6 +133,8 @@ resource "aws_instance" "kubeadm" {
 
 
 }
+
+
 //elastic IP
 /*
 resource "aws_eip" "ubuntu" {
