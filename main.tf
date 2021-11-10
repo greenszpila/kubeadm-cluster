@@ -124,7 +124,7 @@ resource "aws_instance" "kubeadm-node" {
     "sudo apt-mark hold docker-ce kubelet kubeadm kubectl",
     "echo \"net.bridge.bridge-nf-call-iptables=1\" | sudo tee -a /etc/sysctl.conf",
     # modprobe br_netfilter optional to fix "sysctl: cannot stat /proc/sys/net/bridge/bridge-nf-call-iptables: No such file or directory"
-    # "sudo modprobe br_netfilter",
+    "sudo modprobe br_netfilter",
     "sudo sysctl -p",
 
 
