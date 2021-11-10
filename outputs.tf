@@ -8,3 +8,7 @@ output "instance_public_ip" {
   #value       = aws_instance.kubeadm-node[count.index].public_ip
   value = "${join(",", aws_instance.kubeadm-node.*.public_ip)}"
 }
+
+output "connect" {
+  value = "ssh -i ${var.ami_key_pair_name}.pem ubuntu@${join(",", aws_instance.kubeadm-node.*.public_ip)}"
+}

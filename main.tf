@@ -1,5 +1,19 @@
+/*resource random_pet security-group {
+  length    = length
+  prefix    = ""
+  separator = ""
+
+  keepers = {
+    id = value
+  }
+}
+*/
+resource "random_pet" "security-group" {}
+
+
 resource "aws_security_group" "remote-allow" {
-  name        = "remote-allow-security-group"
+  name = "${random_pet.security-group.id}-allow"
+  //name        = "remote-allow-security-group"
   description = "Allow HTTP, HTTPS and SSH traffic"
 
 /*
