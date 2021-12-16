@@ -59,3 +59,20 @@
       args:
         chdir: $HOME
         creates: node
+
+# tasks file for install-helm
+- hosts: kubemaster
+  become: yes
+  tasks:
+  - name: Getting helm install script...
+    shell: curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+    args:
+      chdir: /home/ubuntu/
+  - name: Installing helm... (1)
+    become: yes
+    shell: chmod 700 get_helm.sh
+    args:
+      chdir: /home/ubuntu/
+  - name: Installing helm... (2)
+    become: yes
+    shell: /home/ubuntu/get_helm.sh
