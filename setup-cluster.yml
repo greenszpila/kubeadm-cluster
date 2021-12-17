@@ -1,15 +1,10 @@
-# Setup Cluster
+# Setup cluster 
 - hosts: kubemaster
   remote_user: ubuntu
   become: yes
   environment: 
     HOME: /home/ubuntu/
   tasks:
-   - name: Install kubectl on Master
-     apt:
-       name: kubectl
-       state: present
-
    # Initialize Cluster. The log is also used to prevent an second initialization
    - name: Initialize Cluster
      shell: kubeadm init --pod-network-cidr=10.244.0.0/16 >> cluster_init.log
@@ -31,6 +26,7 @@
        dest: $HOME/.kube/config
        remote_src: yes
        owner: ubuntu
+   # Setup Flannel network 
 
    - name: Setup Flannel. Use log to prevent second installation
      shell: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml >> flannel_setup.log
@@ -56,13 +52,11 @@
     - name: Joining to the cluster
       become: yes
       shell: "{{ hostvars['master']['join_command'] }} >> node_join.log" 
-    #- name: Join the cluster. Use log to prevent joining twice
-    #  shell: "{{ hostvars['kubemaster'].join_command }} >> node_join.log"
       args:
         chdir: $HOME
         creates: node
 
-# tasks file for install-helm
+# tasks to install-helm on master node
 - hosts: kubemaster
   become: yes
   tasks:

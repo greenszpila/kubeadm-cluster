@@ -1,13 +1,3 @@
-/*resource random_pet security-group {
-  length    = length
-  prefix    = ""
-  separator = ""
-
-  keepers = {
-    id = value
-  }
-}
-*/
 
 locals {
   ssh_user         = "ubuntu"
@@ -73,7 +63,6 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name   = "name"
-    #values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
     values = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"]
   }
 
@@ -114,14 +103,7 @@ resource "aws_instance" "kubeadm-node" {
       type     = "ssh"
       user     = "ubuntu"
       private_key = "${file(var.private_key_location)}"
-      #private_key = "${file("~/coding/kriss.pem")}"
-      #host     = aws_instance.kubeadm-node[count.index].public_ip
-      #host     = "${aws_instance.kubeadm-node[count.index].public_ip}"
-      #host = element(aws_instance.kubeadm-node.*.public_ip, count.index)
-      #host     = "${element(aws_instance.kubeadm-node.*.public_ip, count.index)}"
       host = "${self.public_ip}"
-      #host = aws_instance.kubeadm-node.*.arn
-      #host     = aws_instance.kubeadm-node.public_ip
       timeout     = "2m"
     }
     inline = [
@@ -133,21 +115,13 @@ resource "aws_instance" "kubeadm-node" {
     "deb https://apt.kubernetes.io/ kubernetes-xenial main",
     "EOF",
     "sudo apt update",
-    #"sudo apt-get install -y docker-ce=5:19.03.12~3-0~ubuntu-bionic kubelet=1.19.4-00 kubeadm=1.19.4-00 kubectl=1.19.4-00",
-    "sudo apt-get install -y docker-ce=5:19.03.12~3-0~ubuntu-bionic kubelet=1.19.4-00 kubeadm=1.19.4-00",
-    #"sudo apt-mark hold docker-ce kubelet kubeadm kubectl",
-    "sudo apt-mark hold docker-ce kubelet kubeadm",
+    "sudo apt-get install -y docker-ce=5:19.03.12~3-0~ubuntu-bionic kubelet=1.19.4-00 kubeadm=1.19.4-00 kubectl=1.19.4-00",
+    "sudo apt-mark hold docker-ce kubelet kubeadm kubectl",
     "echo \"net.bridge.bridge-nf-call-iptables=1\" | sudo tee -a /etc/sysctl.conf",
-    # modprobe br_netfilter optional to fix "sysctl: cannot stat /proc/sys/net/bridge/bridge-nf-call-iptables: No such file or directory"
     "sudo modprobe br_netfilter",
     "sudo sysctl -p",
     ]
   }
-
-
-  #tags = {
-  #  Name = "krs-tf-nr1"
-  #}
 
   vpc_security_group_ids = [
     aws_security_group.remote-allow.id
@@ -178,8 +152,6 @@ triggers = {
   }  
 
   provisioner "local-exec" {
-    #command = "ansible all -m shell -a 'sudo apt update; sudo apt-get install -y docker-ce=5:19.03.12~3-0~ubuntu-bionic kubelet=1.19.4-00 kubeadm=1.19.4-00 kubectl=1.19.4-00'"
-    #command = "ansible-playbook  -i ${element((aws_instance.kubeadm-node.*.public_ip),0)}, --private-key ${local.private_key_path} setup-cluster.yml"
     command = "ansible-playbook  -i hosts --user=ubuntu --private-key ${local.private_key_path} setup-cluster.yml"
   }
 
