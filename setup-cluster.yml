@@ -23,12 +23,14 @@
        path: $HOME/.kube
        state: directory
        mode: 0755
+       recurse: yes
 
    - name: Copy admin.conf to the user's kube directory
      copy:
        src: /etc/kubernetes/admin.conf
        dest: $HOME/.kube/config
        remote_src: yes
+       owner: ubuntu
 
    - name: Setup Flannel. Use log to prevent second installation
      shell: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml >> flannel_setup.log
