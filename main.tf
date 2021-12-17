@@ -1,15 +1,9 @@
+# generate random pet string to avoid using the same security group and the ec2 instance name 
 
-locals {
-  ssh_user         = "ubuntu"
-  key_name         = "kriss"
-  private_key_path = "~/coding/kriss.pem"
-}
 resource "random_pet" "security-group" {}
-
-
 resource "aws_security_group" "remote-allow" {
   name = "${random_pet.security-group.id}-allow"
-  //name        = "remote-allow-security-group"
+  #name        = "remote-allow-security-group"
   description = "Allow HTTP, HTTPS and SSH traffic"
 
 /*
@@ -152,7 +146,7 @@ triggers = {
   }  
 
   provisioner "local-exec" {
-    command = "ansible-playbook  -i hosts --user=ubuntu --private-key ${local.private_key_path} setup-cluster.yml"
+    command = "ansible-playbook  -i hosts --user=ubuntu --private-key ${var.private_key_location} setup-cluster.yml"
   }
 
 }

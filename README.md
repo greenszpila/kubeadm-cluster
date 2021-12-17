@@ -1,10 +1,12 @@
 # terraform-kubeadm-3node-cluster 
 
-Simple config file that can be applied to deploy two worker nodes and one master node as `ec2` instances in the `aws`. 
+Bootstraping kubeadm kubernetes cluster using terraform and ansible. 
+I am using remote-exec and local-exec to demonstrate two different ways of configuring hosts. 
 
 ### Dependencies
 
 * terraform
+* ansible
 * git
 * aws account and aws cli installed 
 
