@@ -45,20 +45,20 @@ Copy and paste the auto-generated command to connect to the master node:
 
 ### Verify the cluster
 
-####Create a deployment named nginx:
+Create a deployment named nginx:
 
 `kubectl create deployment nginx --image=nginx`  
 `kubectl expose deploy nginx --port 80 --target-port 80 --type NodePort`  
 `kubectl get services`  
 
-To test that everything is working, visit: 
+To test that everything is working, visit one of the workers: 
 
-- http://worker_1_ip:nginx_port or, 
+- http://worker_1_ip:nginx_port  
 - http://worker_2_ip:nginx_port 
 
 through a browser or `curl` on your local machine. You will see Nginx’s familiar welcome page.
 
-####Install New Relic Kubernetes integration with Pixie by following the below guide:
+Install New Relic Kubernetes integration with Pixie by following the below guide:
 
 - https://docs.newrelic.com/docs/kubernetes-pixie/kubernetes-integration/installation/kubernetes-integration-install-configure/
 
