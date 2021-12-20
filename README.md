@@ -1,7 +1,7 @@
-# terraform-kubeadm-3node-cluster 
+# Terraform with Ansible kubeadm bootstrap cluster.
 
 Bootstraping kubeadm kubernetes cluster using terraform and ansible. 
-I am using remote-exec and local-exec to demonstrate two different ways of configuring hosts. 
+I am using `remote-exec` and `local-exec` to demonstrate two different ways of configuring hosts. 
 
 ### Dependencies
 
@@ -33,32 +33,32 @@ ec2_instance_region = "ap-east-1"
 
 then run the `terraform apply -var-file yourVarFile.tfvars` 
 
-## SSH to the Master node
+### SSH to the Master node
 
 Copy and paste the auto-generated command to connect to the master node: 
 
 `ssh_to_master = "ssh -i ~/coding/key_name.pem ubuntu@18.191.25.152"` 
 
-# Verify the worker nodes have joined the cluster successfully:
+### Verify the worker nodes have joined the cluster successfully:
 
 `kubectl get nodes`
 
-# Verify the cluster
+### Verify the cluster
 
-Create a deployment named nginx:
+####Create a deployment named nginx:
 
-`kubectl create deployment nginx --image=nginx` 
-`kubectl expose deploy nginx --port 80 --target-port 80 --type NodePort` 
-`kubectl get services` 
+`kubectl create deployment nginx --image=nginx`  
+`kubectl expose deploy nginx --port 80 --target-port 80 --type NodePort`  
+`kubectl get services`  
 
-To test that everything is working, visit
+To test that everything is working, visit: 
 
 - http://worker_1_ip:nginx_port or, 
 - http://worker_2_ip:nginx_port 
 
 through a browser or `curl` on your local machine. You will see Nginx’s familiar welcome page.
 
-Install New Relic Kubernetes integration with Pixie by following the below guide:
+####Install New Relic Kubernetes integration with Pixie by following the below guide:
 
 - https://docs.newrelic.com/docs/kubernetes-pixie/kubernetes-integration/installation/kubernetes-integration-install-configure/
 
@@ -66,7 +66,7 @@ Verify if all pods are in running state with:
 
 `kubectl get pods -n newrelic` 
 
-## Clean up
+### Clean up
 
 `terraform destroy` or 
 `terraform destroy -var-file eu-west.tfvars` if the var file was used.
