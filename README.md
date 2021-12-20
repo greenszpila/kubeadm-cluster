@@ -13,77 +13,66 @@ I am using remote-exec and local-exec to demonstrate two different ways of confi
 ### Installing
 
 * git pull repository:  `https://github.com/greenszpila/kubeadm-cluster.git`
+* terraform init
 
-### Executing program
+### Deploy one master and two worker nodes kubeadm 1.19 cluster
 
-### To spin up simple EC2 Ubuntu 18.04 
 By default the resources are being deployed to the `us-east-2` region.
 To deploy cluster to the eu-west region:
 
 `terraform apply -var-file eu-west.tfvars` 
 
-You could create your own variable file or edit the above with the following details which are self explanatory:
+You could create your own variable file or edit the `eu-west.tfvars` with the following details which are self explanatory:
 
 ```
-ec2_instance_type = "t2.medium"
-ami_key_pair_name = "aws-keypair-name"
-private_key_location = "~/location/key.pem"
-ec2_instance_region = "aws-region"
+ec2_instance_type = "t2.large"
+ami_key_pair_name = "my_key"
+private_key_location = "~/location/my_key.pem"
+ec2_instance_region = "ap-east-1"
 ```
 
 then run the `terraform apply -var-file yourVarFile.tfvars` 
 
-## After the nodes have been successfully deployed follow the cluster initialization steps:
+## SSH to the Master node
 
-Choose one of the nodes to become a Master. SSH to it with your aws ssh key. 
+Copy and paste the auto-generated command to connect to the master node: 
 
-`ssh -i kriss-eu.pem ubuntu@54.154.101.211`
-
-# Initialize the cluster (run only on the master):
-
-`sudo kubeadm init --pod-network-cidr=10.244.0.0/16`
-
-
-# Set up local kubeconfig (run only on the master):
-
-```
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-```
-
-
-# Apply Flannel CNI network overlay:(run only on the master):
-`kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml`
-
-# Join the worker nodes to the cluster, run only on the worker nodes.
-
-`sudo kubeadm join [OUTPUT_FROM_KUBEADM_INIT_COMMAND]`
-
-example command:
-
-```
-sudo kubeadm join 172.31.29.245:6443 --token wnjogj.jb4e21hky52pbl1q \
-    --discovery-token-ca-cert-hash  sha256:ca7f2267d03b137cfcf6975bcdd2ccab4e4e0411f82c70510c55a543a37b27e1    
-```
+`ssh_to_master = "ssh -i ~/coding/key_name.pem ubuntu@18.191.25.152"` 
 
 # Verify the worker nodes have joined the cluster successfully:
 
 `kubectl get nodes`
 
-# Install Helm on the Master
+# Verify the cluster
 
-Install Helm 3
-Carry out following steps on the master node.
+Create a deployment named nginx:
 
-Install Helm:
-`curl -L https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash`
+`kubectl create deployment nginx --image=nginx` 
+`kubectl expose deploy nginx --port 80 --target-port 80 --type NodePort` 
+`kubectl get services` 
 
- 
-Validate Helm has been installed successfully:
-`helm version`
+To test that everything is working, visit
 
+- http://worker_1_ip:nginx_port or, 
+- http://worker_2_ip:nginx_port 
 
-Add the stable Helm charts:
-`helm repo add stable https://charts.helm.sh/stable`
+through a browser or `curl` on your local machine. You will see Nginx’s familiar welcome page.
+
+Install New Relic Kubernetes integration with Pixie by following the below guide:
+
+- https://docs.newrelic.com/docs/kubernetes-pixie/kubernetes-integration/installation/kubernetes-integration-install-configure/
+
+Verify if all pods are in running state with:
+
+`kubectl get pods -n newrelic` 
+
+## Clean up
+
+`terraform destroy` or 
+`terraform destroy -var-file eu-west.tfvars` if the var file was used.
+
+Delete the hosts file if you are planning to use the same directory for the future tf deployments. 
+
+`rm -rf hosts` 
+
 

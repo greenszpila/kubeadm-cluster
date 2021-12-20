@@ -10,13 +10,13 @@ output "instance_public_ip" {
 }
 
 output "ssh_to_master" {
-  value = "ssh -i ${var.ami_key_pair_name}.pem ubuntu@${element((aws_instance.kubeadm-node.*.public_ip),0)}"
+  value = "ssh -i ${var.private_key_location} ubuntu@${element((aws_instance.kubeadm-node.*.public_ip),0)}"
 }
 
 output "ssh_to_worker1" {
-  value = "ssh -i ${var.ami_key_pair_name}.pem ubuntu@${element((aws_instance.kubeadm-node.*.public_ip),1)}"
+  value = "ssh -i ${var.private_key_location} ubuntu@${element((aws_instance.kubeadm-node.*.public_ip),1)}"
 }
 
 output "ssh_to_worker2" {
-  value = "ssh -i ${var.ami_key_pair_name}.pem ubuntu@${element((aws_instance.kubeadm-node.*.public_ip),2)}"
+  value = "ssh -i ${var.private_key_location} ubuntu@${element((aws_instance.kubeadm-node.*.public_ip),2)}"
 }
