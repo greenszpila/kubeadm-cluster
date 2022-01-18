@@ -151,5 +151,12 @@ triggers = {
   provisioner "local-exec" {
     command = "ansible-playbook  -i hosts --user=ubuntu --private-key ${var.private_key_location} setup-cluster.yml"
   }
+}
 
+resource "null_resource" "destroy-file" {
+  
+  provisioner "local-exec" {
+    command = "rm -f ./hosts"
+    when    = destroy
+  }
 }
