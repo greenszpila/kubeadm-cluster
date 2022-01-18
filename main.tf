@@ -144,6 +144,9 @@ triggers = {
   provisioner "local-exec" {
     command = "echo ${element((aws_instance.kubeadm-node.*.public_ip),2)} >> hosts"
   }  
+  provisioner "local-exec" {
+    command = "echo \"[kubemaster:vars]\nansible_ssh_common_args='-o StrictHostKeyChecking=no'\n[kubeworkers:vars]\nansible_ssh_common_args='-o StrictHostKeyChecking=no'\" >> hosts"
+  }
 
   provisioner "local-exec" {
     command = "ansible-playbook  -i hosts --user=ubuntu --private-key ${var.private_key_location} setup-cluster.yml"
