@@ -1,11 +1,13 @@
-# generate random pet string to avoid using the same security group and the ec2 instance name 
+# tf script to deploy K8s kubeadm cluster including:
+# three ec2 instances, security groups, ansible inventory file and executing two ansible playbooks.
 
+# generate random pet string used for naming uniquely aws resources such as security groups and the ec2 instances. This is to avoid using the same security group and the ec2 instance names.
 resource "random_pet" "security-group" {}
+
+# definie basic security riles to allow kubernetes traffic
 resource "aws_security_group" "kubernetes-traffic" {
   name = "${random_pet.security-group.id}-kubernetes-traffic"
-  #name        = "kubernetes-traffic-security-group"
-  description = "Allow HTTP, HTTPS and SSH traffic"
-  
+  description = "Allow Kubernetes,HTTP, HTTPS and SSH traffic"
   egress {
     from_port   = 0
     to_port     = 0
@@ -58,13 +60,13 @@ resource "aws_security_group" "kubernetes-traffic" {
     self        = true
     description = "Allow incoming traffic from cluster nodes"
   }
-  
+
   tags = {
     Name = "kubeadm"
   }
 }
 
-
+# search for latest oficcial ubuntu image, this helps to make it easier when deploying instances in other regions
 data "aws_ami" "ubuntu" {
   most_recent = true
 
@@ -80,18 +82,8 @@ data "aws_ami" "ubuntu" {
 
   owners = ["099720109477"] # Canonical
 }
-output "ip" {
-  value = "${join(",", aws_instance.kubeadm-node.*.public_ip)}" 
-  }
   
-resource "null_resource" "ConfigureAnsibleLabelVariable" {
-  
-  provisioner "local-exec" {
-    command = "echo [kubemaster] >> hosts"
-  }
-  
-}
-
+# deploy three or more (depending on count value) ec2 instances, one master and two worker nodes
 resource "aws_instance" "kubeadm-node" {
   count = 3
   key_name = var.ami_key_pair_name
@@ -104,7 +96,8 @@ resource "aws_instance" "kubeadm-node" {
   instance_type = var.ec2_instance_type
 
   
-
+# remote-exec to run the commands on all instances, it configures the network settings.
+# this option could also be uses to configure the cluster instead of ansible plabooks.
   provisioner "remote-exec" {
     connection {
       type     = "ssh"
@@ -115,15 +108,6 @@ resource "aws_instance" "kubeadm-node" {
     }
     inline = [
     "sudo apt update",
-    "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
-    "sudo add-apt-repository	\"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\"",
-    "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
-    "cat << EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list",
-    "deb https://apt.kubernetes.io/ kubernetes-xenial main",
-    "EOF",
-    "sudo apt update",
-    "sudo apt-get install -y docker-ce=5:19.03.12~3-0~ubuntu-bionic kubelet=1.21.8-00 kubeadm=1.21.8-00 kubectl=1.21.8-00",
-    "sudo apt-mark hold docker-ce kubelet kubeadm kubectl",
     "echo \"net.bridge.bridge-nf-call-iptables=1\" | sudo tee -a /etc/sysctl.conf",
     "sudo modprobe br_netfilter",
     "sudo sysctl -p",
@@ -135,7 +119,24 @@ resource "aws_instance" "kubeadm-node" {
   ]
 
 }
+# create Ansible inventory hosts file 
+resource "local_file" "ansible_inventory" {
+ 
+  filename              = "./hosts"
+  file_permission       = "0664"
+  directory_permission  = "0755"
+  content               = <<-EOT
+    [kubemaster]
+    master ansible_host=${element((aws_instance.kubeadm-node.*.public_ip),0)}
+    [kubeworkers]
+    ${element((aws_instance.kubeadm-node.*.public_ip),1)}
+    ${element((aws_instance.kubeadm-node.*.public_ip),2)}
+    [all:vars]
+    ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+  EOT
+}
 
+# null resource to run the ansible playbooks to configure the kubeadm cluster
 resource "null_resource" "kubeadm-node"  {
 
 triggers = {
@@ -146,30 +147,9 @@ triggers = {
   }
 
   provisioner "local-exec" {
-    command = "echo master ansible_host=${element((aws_instance.kubeadm-node.*.public_ip),0)} >> hosts"
+    command = "ansible-playbook  -i hosts --user=ubuntu --private-key ${var.private_key_location} kube-install.yml"
   }
-  provisioner "local-exec" {
-    command = "echo [kubeworkers] >> hosts"
-  }
-  provisioner "local-exec" {
-    command = "echo ${element((aws_instance.kubeadm-node.*.public_ip),1)} >> hosts"
-  }
-  provisioner "local-exec" {
-    command = "echo ${element((aws_instance.kubeadm-node.*.public_ip),2)} >> hosts"
-  }  
-  provisioner "local-exec" {
-    command = "echo \"[kubemaster:vars]\nansible_ssh_common_args='-o StrictHostKeyChecking=no'\n[kubeworkers:vars]\nansible_ssh_common_args='-o StrictHostKeyChecking=no'\" >> hosts"
-  }
-
   provisioner "local-exec" {
     command = "ansible-playbook  -i hosts --user=ubuntu --private-key ${var.private_key_location} setup-cluster.yml"
-  }
-}
-
-resource "null_resource" "destroy-file" {
-  
-  provisioner "local-exec" {
-    command = "rm -f ./hosts"
-    when    = destroy
   }
 }
