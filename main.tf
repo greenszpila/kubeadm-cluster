@@ -1,12 +1,24 @@
 # generate random pet string to avoid using the same security group and the ec2 instance name 
 
 resource "random_pet" "security-group" {}
-resource "aws_security_group" "remote-allow" {
-  name = "${random_pet.security-group.id}-allow"
-  #name        = "remote-allow-security-group"
+resource "aws_security_group" "kubernetes-traffic" {
+  name = "${random_pet.security-group.id}-kubernetes-traffic"
+  #name        = "kubernetes-traffic-security-group"
   description = "Allow HTTP, HTTPS and SSH traffic"
-
-/*
+  
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "Kubernetes"
+    from_port   = 6443
+    to_port     = 6443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
   ingress {
     description = "SSH"
     from_port   = 22
@@ -30,24 +42,25 @@ resource "aws_security_group" "remote-allow" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  */
+
   ingress {
-    description = "All"
+    description = "Allow incoming traffic from the Pods of the cluster"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["10.244.0.0/16"]
   }
 
-  egress {
+  ingress {
+    protocol    = -1
     from_port   = 0
     to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    self        = true
+    description = "Allow incoming traffic from cluster nodes"
   }
-
+  
   tags = {
-    Name = "terraform"
+    Name = "kubeadm"
   }
 }
 
@@ -118,7 +131,7 @@ resource "aws_instance" "kubeadm-node" {
   }
 
   vpc_security_group_ids = [
-    aws_security_group.remote-allow.id
+    aws_security_group.kubernetes-traffic.id
   ]
 
 }
