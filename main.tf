@@ -109,7 +109,7 @@ resource "aws_instance" "kubeadm-node" {
     "deb https://apt.kubernetes.io/ kubernetes-xenial main",
     "EOF",
     "sudo apt update",
-    "sudo apt-get install -y docker-ce=5:19.03.12~3-0~ubuntu-bionic kubelet=1.19.4-00 kubeadm=1.19.4-00 kubectl=1.19.4-00",
+    "sudo apt-get install -y docker-ce=5:19.03.12~3-0~ubuntu-bionic kubelet=1.21.8-00 kubeadm=1.21.8-00 kubectl=1.21.8-00",
     "sudo apt-mark hold docker-ce kubelet kubeadm kubectl",
     "echo \"net.bridge.bridge-nf-call-iptables=1\" | sudo tee -a /etc/sysctl.conf",
     "sudo modprobe br_netfilter",
