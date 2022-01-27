@@ -5,9 +5,13 @@ output "instance_id" {
 
 output "instance_public_ip" {
   description = "Public IP address of the EC2 instance"
-  #value       = aws_instance.kubeadm-node[count.index].public_ip
-  value = "${join(",", aws_instance.kubeadm-node.*.public_ip)}"
+  value = "${join(",", aws_instance.kubeadm-node.*.public_ip)}\n"
 }
+output "instance_private_ip" {
+  description = "Private IP address of the EC2 instance"
+  value = "${join(",", aws_instance.kubeadm-node.*.private_ip)}"
+}
+
 
 output "ssh_to_master" {
   value = "ssh -i ${var.private_key_location} ubuntu@${element((aws_instance.kubeadm-node.*.public_ip),0)}"
